@@ -10,7 +10,7 @@ class spectrum_analyser_View extends HTMLElement {
         this.innerHTML = this.getHTML();
 
         // dftListener is a function 
-        // that will be called whenever the dftOut parameter changes
+        // that will be called whenever the spectrum parameter changes
         this.dftListener = (value) => 
         {
             const dataDisplay = this.querySelector('#data-display');
@@ -18,8 +18,8 @@ class spectrum_analyser_View extends HTMLElement {
             this.updateVisualization(value.magnitudes);
         };
 
-        // take a look at dftOut and realign the visualization
-        this.patchConnection.addEndpointListener('dftOut', this.dftListener);
+        // take a look at spectrum and realign the visualization
+        this.patchConnection.addEndpointListener('spectrum', this.dftListener);
     }
 
     updateVisualization(magnitudes) 
