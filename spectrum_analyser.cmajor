@@ -1,10 +1,12 @@
 namespace spectrum_analyser
 {
     let DFT_BUFFER_SIZE = 8192;
+    let MEMORY_FRAMES = 5;
 
     struct Spectrum
     {
         float[DFT_BUFFER_SIZE/2] magnitudes;
+        float[DFT_BUFFER_SIZE/2] peakMagnitudes;
     }
 
 
@@ -34,7 +36,9 @@ namespace spectrum_analyser
         let fftsPerSecond = 20;
         let framesBetweenFtts = (processor.frequency / fftsPerSecond) - windowSize;
 
-        float[DFT_BUFFER_SIZE] buffer;
+        wrap<MEMORY_FRAMES> memoryIdx = 0;
+        float[DFT_BUFFER_SIZE, MEMORY_FRAMES] magnitudeMemory;
+        float[DFT_BUFFER_SIZE] waveBuffer;
 
         float[windowSize] hann()
         {
@@ -54,25 +58,39 @@ namespace spectrum_analyser
         {
             loop
             {
+                ++memoryIdx;
                 for (wrap<windowSize> counter)
                 {
-                    buffer[counter] = (stereoWave[0] + stereoWave[1]) / 2.0f * window[counter];
+                    waveBuffer[counter] = (stereoWave[0] + stereoWave[1]) / 2.0f * window[counter];
                     advance();
                 }
 
                 // Calculate the spectrum
                 float[DFT_BUFFER_SIZE] complexSpectrum;
-                std::frequency::realOnlyForwardFFT(buffer, complexSpectrum);
+                std::frequency::realOnlyForwardFFT(waveBuffer, complexSpectrum);
 
-                Spectrum magPhaseSpectrum;
+                Spectrum magSpectrum;
                 for (wrap<fftSize> binIdx)
                 {
                     float real = complexSpectrum[binIdx];
                     float imag = complexSpectrum.at(fftSize + binIdx);
-                    magPhaseSpectrum.magnitudes[binIdx] = sqrt(real * real + imag * imag) * normalizationFactor * 1000.0f;
+                    magSpectrum.magnitudes[binIdx] = sqrt(real * real + imag * imag) * normalizationFactor * 1000.0f;
+                    magnitudeMemory[binIdx, memoryIdx] = magSpectrum.magnitudes[binIdx];
                 }
 
-                spectrum <- magPhaseSpectrum;
+                // Calculate peak magnitude spectrum
+                for (wrap<fftSize> binIdx)
+                {
+                    float peak = 0.0f;
+                    for (wrap<MEMORY_FRAMES> memoryIdx)
+                    {
+                        if (magnitudeMemory[binIdx, memoryIdx] > peak)
+                            peak = magnitudeMemory[binIdx, memoryIdx];
+                    }
+                    magSpectrum.peakMagnitudes[binIdx] = peak;
+                }
+
+                spectrum <- magSpectrum;
 
                 // if const (framesBetweenFtts > 0)
                 //     loop (framesBetweenFtts)
