@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+            .main-view-element {
+                color: rgba(90, 90, 90, 1);
+                font-family: monospace;
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            #data-display {
+                display: flex;
+                flex-direction: column;
+                width: fit-content;
+                height: fit-content;
+                border: 24px double rgba(24, 24, 24, 1);
+            }
+
+            #visualization {
+                background: rgba(128,128, 128, 1);
+                width: 100%;
+                height: 300px;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+                pointer-events: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="data-display">
+            <canvas 
+                id="visualization" 
+                width="800">
+            </canvas>
+        </div>
+    </body>
+</html>

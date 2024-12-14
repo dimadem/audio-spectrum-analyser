@@ -11,6 +11,11 @@
 
     "source":           ["spectrum_analyser.cmajor"],
 
+    "view":             {
+                            "src": "view/index.js",
+                            "resizable": true
+                        },
+
     "externals": {
         "spectrum_analyser::track": { "source": "track.mp3"}
     }

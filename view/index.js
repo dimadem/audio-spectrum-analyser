@@ -1,83 +1,79 @@
-
-
 /*
     This simple web component just manually creates a set of plain sliders for the
     known parameters, and uses some listeners to connect them to the patch.
 */
-class spectrum_analyser_View extends HTMLElement
-{
-    constructor (patchConnection)
-    {
+class spectrum_analyser_View extends HTMLElement {
+    constructor(patchConnection) {
         super();
         this.patchConnection = patchConnection;
         this.classList = "main-view-element";
         this.innerHTML = this.getHTML();
+
+        // dftListener is a function 
+        // that will be called whenever the dftOut parameter changes
+        this.dftListener = (value) => 
+        {
+            const dataDisplay = this.querySelector('#data-display');
+            if (!dataDisplay) return;
+            this.updateVisualization(value.magnitudes);
+        };
+
+        // take a look at dftOut and realign the visualization
+        this.patchConnection.addEndpointListener('dftOut', this.dftListener);
     }
 
-    connectedCallback()
+    updateVisualization(magnitudes) 
     {
-        // When the HTMLElement is shown, this is a good place to connect
-        // any listeners you need to the PatchConnection object..
+        const canvas = this.querySelector('#visualization');
+        if (!canvas) return;
 
-        // First, find our frequency slider:
-        const freqSlider = this.querySelector ("#frequency");
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
 
-        // When the slider is moved, this will cause the new value to be sent to the patch:
-        freqSlider.oninput = () => this.patchConnection.sendEventOrValue (freqSlider.id, freqSlider.value);
+        // clean canvas before drawing
+        ctx.clearRect(0, 0, width, height);
 
-        // Create a listener for the frequency endpoint, so that when it changes, we update our slider..
-        this.freqListener = value => freqSlider.value = value;
-        this.patchConnection.addParameterListener (freqSlider.id, this.freqListener);
+        // draw the line
+        ctx.beginPath();
+        ctx.imageSmoothingEnabled = false;
 
-        // Now request an initial update, to get our slider to show the correct starting value:
-        this.patchConnection.requestParameterValue (freqSlider.id);
-    }
-
-    disconnectedCallback()
-    {
-        // When our element is removed, this is a good place to remove
-        // any listeners that you may have added to the PatchConnection object.
-        this.patchConnection.removeParameterListener ("frequency", this.freqListener);
-    }
-
-    getHTML()
-    {
-        return `
-        <style>
-            .main-view-element {
-                background: black;
-                color: white;
-                font-family: monospace;
-                display: block;
-                width: 100%;
-                height: 100%;
-                padding: 10px;
-                overflow: auto;
+        //! calculate the pixel size
+        //1. magnitudes.length -> total number of frequencies
+        const totalFrequencies = magnitudes.length;
+        //2. size of each pixel related to screen width
+        const pixelSize = Math.max(1, Math.floor(width / totalFrequencies)); 
+        
+        // draw the line
+        magnitudes.forEach((magnitude, index) => {
+            const x = index * pixelSize;
+            const pixelHeight = Math.ceil(magnitude * height);
+            
+            // draw the pixel
+            for (let y = height; y > height - pixelHeight; y -= pixelSize) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${magnitude})`;
+                ctx.fillRect(x, y - pixelSize, pixelSize, pixelSize);
             }
+        });
+        ctx.stroke();
+    }
 
-            .param {
-                display: inline-block;
-                margin: 10px;
-                width: 300px;
+    getHTML() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', './view/index.html', false);
+        try {
+            xhr.send();
+            if (xhr.status === 200) {
+                return xhr.responseText;
             }
-        </style>
-
-        <div id="controls">
-          <p>Your GUI goes here!</p>
-          <input type="range" class="param" id="frequency" min="5" max="1000">Frequency</input>
-        </div>`;
+        } catch (error) {
+            alert('Failed to load the view');
+        }
     }
 }
 
 window.customElements.define ("spectrum_analyser-view", spectrum_analyser_View);
 
-/* This is the function that a host (the command line patch player, or a Cmajor plugin
-   loader, or our VScode extension, etc) will call in order to create a view for your patch.
-
-   Ultimately, a DOM element must be returned to the caller for it to append to its document.
-   However, this function can be `async` if you need to perform asyncronous tasks, such as
-   fetching remote resources for use in the view, before completing.
-*/
 export default function createPatchView (patchConnection)
 {
     return new spectrum_analyser_View (patchConnection);
