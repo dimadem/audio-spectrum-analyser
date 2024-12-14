@@ -3,26 +3,72 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
+        <title>audio-spectrum-analyser</title>
         <style>
-            .main-view-element {
-                color: rgba(90, 90, 90, 1);
+            #main-view-element {
                 font-family: monospace;
-                display: block;
+                position: relative;;
                 width: 100%;
                 height: 100%;
             }
 
-            #data-display {
+            .spectrum-visualiser {
+                display: block;
+                position: absolute;
+                bottom: 0;
+            }
+
+            .spectrum-visualiser canvas {
+                display: block;
+                width: 100%;
+                height: auto;
+            }
+
+            .gui {
+                position: absolute;
                 display: flex;
-                flex-direction: column;
-                width: fit-content;
-                height: fit-content;
-                border: 24px double rgba(24, 24, 24, 1);
+                flex-direction: row;
+                padding: 10px;
+                top: 0;
+                left: 0;
+                z-index: 5;
+                background-color: rgba(0, 0, 0, 0.1); /* Semi-transparent background */
+                width: 100%;
+                height: 100%; /* Fixed height for controls */
+                box-sizing: border-box;
+                border-style: dashed solid;
+            }
+
+            .horisontal_slider {
+                position: relative; /* Changed from absolute */
+                -webkit-appearance: none;
+                width: 100%; /* Fixed width instead of 100% */
+                height: 14px;
+                margin: 0 10px; /* Add spacing between sliders */
+                border-radius: 5px;
+                background: rgba(24, 24, 24, 1);
+                outline: none;
+                opacity: 0.7;
+                -webkit-transition: .2s;
+                transition: opacity .2s;
+            }
+
+            .vertical_slider {
+                position: relative;
+                right: 0;
+                -webkit-appearance: none;
+                width: 14px;
+                height: 100%;
+                border-radius: 5px;
+                /* background: rgba(24, 24, 24, 1); */
+                outline: none;
+                /* opacity: 0.7; */
+                -webkit-transition: .2s;
+                transition: opacity .2s;
             }
 
             #visualization {
-                background: rgba(128,128, 128, 1);
+                /* background: rgba(128,128, 128, 1); */
                 width: 100%;
                 height: 300px;
                 image-rendering: pixelated;
@@ -31,12 +77,18 @@
             }
         </style>
     </head>
-    <body>
-        <div id="data-display">
+    <body 
+        id="main-view-element">
+        <div class="spectrum-visualiser">
             <canvas 
-                id="visualization" 
-                width="800">
+                сlass="canvas"
+                id="visualization"
+                width="800" height="auto">
             </canvas>
+        </div>
+        <div class="gui">
+             <input class="horisontal_slider" type="range" id="slider" min="0" max="100" value="50" step="10">
+             <input class="vertical_slider" type="range" id="slider" min="0" max="100" value="50" step="10">
         </div>
     </body>
 </html>

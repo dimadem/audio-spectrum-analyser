@@ -1,7 +1,3 @@
-/*
-    This simple web component just manually creates a set of plain sliders for the
-    known parameters, and uses some listeners to connect them to the patch.
-*/
 class spectrum_analyser_View extends HTMLElement {
     constructor(patchConnection) {
         super();
@@ -13,7 +9,7 @@ class spectrum_analyser_View extends HTMLElement {
         // that will be called whenever the dftOut parameter changes
         this.dftListener = (value) => 
         {
-            const dataDisplay = this.querySelector('#data-display');
+            const dataDisplay = this.querySelector('#visualization');
             if (!dataDisplay) return;
             this.updateVisualization(value.magnitudes);
         };
@@ -57,6 +53,7 @@ class spectrum_analyser_View extends HTMLElement {
         });
         ctx.stroke();
     }
+
 
     getHTML() {
         const xhr = new XMLHttpRequest();
