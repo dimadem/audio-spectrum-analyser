@@ -1,35 +1,44 @@
 namespace spectrum_analyser
 {
     let DFT_BUFFER_SIZE = 8192;
+    let MEMORY_FRAMES = 5;
 
-    struct DFTOutput { float[DFT_BUFFER_SIZE/2] magnitudes; }
+    struct Spectrum
+    {
+        float[DFT_BUFFER_SIZE/2] magnitudes;
+        float[DFT_BUFFER_SIZE/2] peakMagnitudes;
+    }
 
-    graph FFB  [[main]]
+
+    graph Analyser  [[main]]
     {
         input  stream float<2> audioIn;
         output stream float<2> audioOut;
-        output dft.dftOut;
+        output dft.spectrum;
 
         node dft = DFT;
 
         // audio routing
         connection
         {
-            audioIn -> audioOut, dft.in;
+            audioIn -> audioOut, dft.stereoWave;
         }
     }
 
+
     processor DFT
     {
-        input stream float<2> in;
-        output event DFTOutput dftOut;
+        input stream float<2> stereoWave;
+        output event Spectrum spectrum;
 
         let fftSize = DFT_BUFFER_SIZE / 2;
         let windowSize = DFT_BUFFER_SIZE / 4;
         let fftsPerSecond = 20;
         let framesBetweenFtts = (processor.frequency / fftsPerSecond) - windowSize;
 
-        float[DFT_BUFFER_SIZE] buffer;
+        wrap<MEMORY_FRAMES> memoryIdx = 0;
+        float[DFT_BUFFER_SIZE, MEMORY_FRAMES] magnitudeMemory;
+        float[DFT_BUFFER_SIZE] waveBuffer;
 
         float[windowSize] hann()
         {
@@ -49,31 +58,43 @@ namespace spectrum_analyser
         {
             loop
             {
+                ++memoryIdx;
                 for (wrap<windowSize> counter)
                 {
-                    buffer[counter] = ((in[0] + in[1]) / 2.0f) * window[counter];
+                    waveBuffer[counter] = (stereoWave[0] + stereoWave[1]) / 2.0f * window[counter];
                     advance();
                 }
 
-                // perform the FFT
-                float[DFT_BUFFER_SIZE] fft;
-                std::frequency::realOnlyForwardFFT(buffer, fft);
+                // Calculate the spectrum
+                float[DFT_BUFFER_SIZE] complexSpectrum;
+                std::frequency::realOnlyForwardFFT(waveBuffer, complexSpectrum);
 
-                // calculate magnitudes
-                DFTOutput result;
-
-                for (wrap<fftSize> i)
+                Spectrum magSpectrum;
+                for (wrap<fftSize> binIdx)
                 {
-                    float real = fft[i];
-                    float imag = fft.at(fftSize + i);
-                    result.magnitudes[i] = sqrt(real * real + imag * imag) * normalizationFactor * 1000.0f;
+                    float real = complexSpectrum[binIdx];
+                    float imag = complexSpectrum.at(fftSize + binIdx);
+                    magSpectrum.magnitudes[binIdx] = sqrt(real * real + imag * imag) * normalizationFactor * 1000.0f;
+                    magnitudeMemory[binIdx, memoryIdx] = magSpectrum.magnitudes[binIdx];
                 }
 
-                dftOut <- result;
+                // Calculate peak magnitude spectrum
+                for (wrap<fftSize> binIdx)
+                {
+                    float peak = 0.0f;
+                    for (wrap<MEMORY_FRAMES> memoryIdx)
+                    {
+                        if (magnitudeMemory[binIdx, memoryIdx] > peak)
+                            peak = magnitudeMemory[binIdx, memoryIdx];
+                    }
+                    magSpectrum.peakMagnitudes[binIdx] = peak;
+                }
 
-                if const (framesBetweenFtts > 0)
-                    loop (framesBetweenFtts)
-                        advance();
+                spectrum <- magSpectrum;
+
+                // if const (framesBetweenFtts > 0)
+                //     loop (framesBetweenFtts)
+                //         advance();
             }
         }
     }
