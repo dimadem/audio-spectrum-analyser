@@ -1,28 +1,80 @@
 namespace spectrum_analyser
 {
-    graph analyser [[ main ]]
+    let DFT_BUFFER_SIZE = 8192;
+
+    struct DFTOutput { float[DFT_BUFFER_SIZE/2] magnitudes; }
+
+    graph FFB  [[main]]
     {
-        output stream float32<2> out;
-        input gain.volume;
+        input  stream float<2> audioIn;
+        output stream float<2> audioOut;
+        output dft.dftOut;
 
-        node
-        {
-            player = std::audio_data::SamplePlayer (track.type);
-            gain = std::levels::SmoothedGain (float32<2>);
-        }
+        node dft = DFT;
 
+        // audio routing
         connection
         {
-            player -> gain.in;
-            gain.out -> out;
+            audioIn -> audioOut, dft.in;
         }
     }
-    
-    //======================================================
-    struct audioTrack
+
+    processor DFT
     {
-        float32<2>[] frames;
-        float64 sampleRate;
+        input stream float<2> in;
+        output event DFTOutput dftOut;
+
+        let fftSize = DFT_BUFFER_SIZE / 2;
+        let windowSize = DFT_BUFFER_SIZE / 4;
+        let fftsPerSecond = 20;
+        let framesBetweenFtts = (processor.frequency / fftsPerSecond) - windowSize;
+
+        float[DFT_BUFFER_SIZE] buffer;
+
+        float[windowSize] hann()
+        {
+            float[windowSize] window;
+
+            for (wrap<windowSize> i)
+                window[i] = float (0.5 * (1.0 - cos(2.0 * pi * i / (windowSize - 1))));
+
+            return window;
+        }
+
+        float[windowSize] window = hann();
+
+        float normalizationFactor = 1.0f / windowSize;
+
+        void main()
+        {
+            loop
+            {
+                for (wrap<windowSize> counter)
+                {
+                    buffer[counter] = ((in[0] + in[1]) / 2.0f) * window[counter];
+                    advance();
+                }
+
+                // perform the FFT
+                float[DFT_BUFFER_SIZE] fft;
+                std::frequency::realOnlyForwardFFT(buffer, fft);
+
+                // calculate magnitudes
+                DFTOutput result;
+
+                for (wrap<fftSize> i)
+                {
+                    float real = fft[i];
+                    float imag = fft.at(fftSize + i);
+                    result.magnitudes[i] = sqrt(real * real + imag * imag) * normalizationFactor * 1000.0f;
+                }
+
+                dftOut <- result;
+
+                if const (framesBetweenFtts > 0)
+                    loop (framesBetweenFtts)
+                        advance();
+            }
+        }
     }
-    external std::audio_data::Stereo track;
 }
