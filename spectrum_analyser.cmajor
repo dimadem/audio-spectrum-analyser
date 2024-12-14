@@ -1,12 +1,12 @@
 namespace spectrum_analyser
 {
-    let DFT_BUFFER_SIZE = 8192;
+    let DFT_BUFFER_SIZE = 2048;
     let MEMORY_FRAMES = 5;
 
     struct Spectrum
     {
-        float[DFT_BUFFER_SIZE/2] magnitudes;
-        float[DFT_BUFFER_SIZE/2] peakMagnitudes;
+        float[DFT_BUFFER_SIZE / 2] magnitudes;
+        float[DFT_BUFFER_SIZE / 2] peakMagnitudes;
     }
 
 

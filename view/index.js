@@ -11,7 +11,7 @@ class spectrum_analyser_View extends HTMLElement {
         {
             const dataDisplay = this.querySelector('#visualization');
             if (!dataDisplay) return;
-            this.updateVisualization(value.magnitudes);
+            this.updateVisualization(value.peakMagnitudes);
         };
 
         // take a look at spectrum and realign the visualization
@@ -40,6 +40,8 @@ class spectrum_analyser_View extends HTMLElement {
         //2. size of each pixel related to screen width
         const pixelSize = Math.max(1, Math.floor(width / totalFrequencies)); 
         
+        //! todo convert linear scale to logarithmic scale
+
         // draw the line
         magnitudes.forEach((magnitude, index) => {
             const x = index * pixelSize;
@@ -47,12 +49,14 @@ class spectrum_analyser_View extends HTMLElement {
             
             // draw the pixel
             for (let y = height; y > height - pixelHeight; y -= pixelSize) {
-                ctx.fillStyle = `rgba(0, 0, 0, ${magnitude})`;
+                ctx.fillStyle = `rgba(0, 0, 0, 1.0)`;
                 ctx.fillRect(x, y - pixelSize, pixelSize, pixelSize);
             }
         });
         ctx.stroke();
     }
+
+    
 
 
     getHTML() {
