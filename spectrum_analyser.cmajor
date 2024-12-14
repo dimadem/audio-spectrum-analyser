@@ -1,0 +1,28 @@
+namespace spectrum_analyser
+{
+    graph analyser [[ main ]]
+    {
+        output stream float32<2> out;
+        input gain.volume;
+
+        node
+        {
+            player = std::audio_data::SamplePlayer (track.type);
+            gain = std::levels::SmoothedGain (float32<2>);
+        }
+
+        connection
+        {
+            player -> gain.in;
+            gain.out -> out;
+        }
+    }
+    
+    //======================================================
+    struct audioTrack
+    {
+        float32<2>[] frames;
+        float64 sampleRate;
+    }
+    external std::audio_data::Stereo track;
+}

@@ -1,0 +1,17 @@
+
+{
+    "CmajorVersion":    1,
+    "ID":               "com.netart.000001",
+    "version":          "1.0",
+    "name":             "spectrum_analyser",
+    "description":      "spectrum_analyser for djs",
+    "category":         "plugin",
+    "manufacturer":     "Your Company Goes Here",
+    "isInstrument":     false,
+
+    "source":           ["spectrum_analyser.cmajor"],
+
+    "externals": {
+        "spectrum_analyser::track": { "source": "track.mp3"}
+    }
+}
