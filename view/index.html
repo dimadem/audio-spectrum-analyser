@@ -29,6 +29,9 @@
                 height: 100%;
             }
 
+            #peakMemory {
+            }
+
             #window-type {
                 position: absolute;
                 top: 0;
@@ -65,9 +68,10 @@
                     <option value="2">Bartlett</option>
                     <option value="3">Hamming</option>
                 </select>
+                <label for="peakMemory">peak memory:</label>
+                <input type="range" id="peakMemory" min="1" max="15" value="5" step="1">
             </div>
             <!-- <input type="range" id="vertical_slider" min="0" max="100" value="50" step="10"> -->
-            <!-- <input type="range" id="horisontal_slider" min="0" max="100" value="50" step="10"> -->
         </div>
     </body>
 </html>

@@ -41,6 +41,7 @@ class spectrum_analyser_View extends HTMLElement {
 
     connectedCallback() 
     {
+        // windowType
         const option = this.querySelector('#windowType');
 
         option.oninput = () => 
@@ -49,6 +50,26 @@ class spectrum_analyser_View extends HTMLElement {
             this.patchConnection.sendEventOrValue(option.id, option.value);
         };
         this.patchConnection.requestParameterValue(option.id);
+
+        // First, find our peakMemory slider:
+        const peakMemorySlider = this.querySelector ("#peakMemory");
+
+        // When the slider is moved, this will cause the new value to be sent to the patch:
+        peakMemorySlider.oninput = () => this.patchConnection.sendEventOrValue (peakMemorySlider.id, peakMemorySlider.value);
+        
+        // Create a listener for the frequency endpoint, so that when it changes, we update our slider..
+        this.peakListener = value => freqSlider.value = value;
+        this.patchConnection.addParameterListener (peakMemorySlider.id, this.peakListener);
+        
+        // Now request an initial update, to get our slider to show the correct starting value:
+        this.patchConnection.requestParameterValue (peakMemorySlider.id);
+    }
+
+    disconnectedCallback()
+    {
+        // When our element is removed, this is a good place to remove
+        // any listeners that you may have added to the PatchConnection object.
+        this.patchConnection.removeParameterListener ("peakMemory", this.peakListener);
     }
 
     /**
@@ -139,7 +160,7 @@ class spectrum_analyser_View extends HTMLElement {
         // draw the spectrum
         const windowedMagnitudes = this.applyWindowFunction(value.magnitudes);
         ctx.beginPath();
-        ctx.strokeStyle = 'rgb(0, 255, 0)';
+        ctx.strokeStyle = 'rgb(80, 80, 28)';
         for (let i = 0; i < windowedMagnitudes.length; i++) {
             const x = this.logScale(i, windowedMagnitudes.length - 1, plotWidth);
             const normalizedHeight = this.amplitudeToDb(windowedMagnitudes[i]);
@@ -152,7 +173,7 @@ class spectrum_analyser_View extends HTMLElement {
     
         // Peaks
         ctx.beginPath();
-        ctx.strokeStyle = 'rgb(255, 0, 0)';
+        ctx.strokeStyle = 'rgb(79, 0, 0)';
         for (let i = 0; i < value.peakMagnitudes.length; i++) {
             const x = this.logScale(i, value.peakMagnitudes.length - 1, plotWidth);
             const normalizedHeight = this.amplitudeToDb(value.peakMagnitudes[i]);
