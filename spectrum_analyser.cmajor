@@ -15,6 +15,7 @@ namespace spectrum_analyser
         input  stream float<2> audioIn;
         output stream float<2> audioOut;
         output dft.spectrum;
+        output dft.frequencies;
 
         node dft = DFT;
 
@@ -30,15 +31,12 @@ namespace spectrum_analyser
     {
         input stream float<2> stereoWave;
         output event Spectrum spectrum;
+        output value float[fftSize] frequencies;
 
         let fftSize = DFT_BUFFER_SIZE / 2;
         let windowSize = DFT_BUFFER_SIZE / 4;
         let fftsPerSecond = 20;
         let framesBetweenFtts = (processor.frequency / fftsPerSecond) - windowSize;
-
-        wrap<MEMORY_FRAMES> memoryIdx = 0;
-        float[DFT_BUFFER_SIZE, MEMORY_FRAMES] magnitudeMemory;
-        float[DFT_BUFFER_SIZE] waveBuffer;
 
         float[windowSize] hann()
         {
@@ -56,6 +54,19 @@ namespace spectrum_analyser
 
         void main()
         {
+            float[fftSize] dftFrequencies;
+            for (wrap<fftSize> binIdx)
+            {
+                dftFrequencies[binIdx] = float(binIdx * processor.frequency / fftSize);
+            }
+            frequencies <- dftFrequencies;
+
+            wrap<MEMORY_FRAMES> memoryIdx = 0;
+            float[DFT_BUFFER_SIZE, MEMORY_FRAMES] magnitudeMemory;
+            float[DFT_BUFFER_SIZE] waveBuffer;
+            float[DFT_BUFFER_SIZE] complexSpectrum;
+            Spectrum magSpectrum;
+
             loop
             {
                 ++memoryIdx;
@@ -66,14 +77,12 @@ namespace spectrum_analyser
                 }
 
                 // Calculate the spectrum
-                float[DFT_BUFFER_SIZE] complexSpectrum;
                 std::frequency::realOnlyForwardFFT(waveBuffer, complexSpectrum);
 
-                Spectrum magSpectrum;
                 for (wrap<fftSize> binIdx)
                 {
-                    float real = complexSpectrum[binIdx];
-                    float imag = complexSpectrum.at(fftSize + binIdx);
+                    const float real = complexSpectrum[binIdx];
+                    const float imag = complexSpectrum.at(fftSize + binIdx);
                     magSpectrum.magnitudes[binIdx] = sqrt(real * real + imag * imag) * normalizationFactor * 1000.0f;
                     magnitudeMemory[binIdx, memoryIdx] = magSpectrum.magnitudes[binIdx];
                 }
