@@ -29,6 +29,15 @@
                 height: 100%;
             }
 
+            #window-type {
+                position: absolute;
+                top: 0;
+                right: 0;
+                padding: 10px;
+                background-color: rgba(0, 0, 0, 0.1);
+                color: white;
+            }
+
             #visualization {
                 display: block;
                 width: 100%;
@@ -48,13 +57,15 @@
             </canvas>
         </div>
         <div class="gui">
-            <label for="windowType">Window Type:</label>
-            <select id="windowType">
-                <option value="0">Rectangular</option>
-                <option value="1" selected="selected">Hann</option>
-                <option value="2">Bartlett</option>
-                <option value="3">Hamming</option>
-            </select>
+            <div id="window-type">
+                <label for="windowType">window type:</label>
+                <select id="windowType">
+                    <option value="0">Rectangular</option>
+                    <option value="1" selected="selected">Hann</option>
+                    <option value="2">Bartlett</option>
+                    <option value="3">Hamming</option>
+                </select>
+            </div>
             <!-- <input type="range" id="vertical_slider" min="0" max="100" value="50" step="10"> -->
             <!-- <input type="range" id="horisontal_slider" min="0" max="100" value="50" step="10"> -->
         </div>
