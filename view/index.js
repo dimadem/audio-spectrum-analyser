@@ -39,6 +39,18 @@ class spectrum_analyser_View extends HTMLElement {
         this.patchConnection.addEndpointListener('spectrum', this.dftListener);
     }
 
+    connectedCallback() 
+    {
+        const option = this.querySelector('#window_type');
+
+        option.oninput = () => 
+        {
+            console.log("option.onchange", option.value);
+            this.patchConnection.sendEventOrValue(option.id, option.value);
+        };
+        this.patchConnection.requestParameterValue(option.id);
+    }
+
     /**
      * Applies Hamming window function to smooth frequency response
      * and reduce spectral leakage at the edges of the analysis window

@@ -13,6 +13,7 @@ namespace spectrum_analyser
     graph Analyser  [[main]]
     {
         input  stream float<2> audioIn;
+        input dft.window_type;
         output stream float<2> audioOut;
         output dft.spectrum;
         // output dft.frequencies;
@@ -30,8 +31,14 @@ namespace spectrum_analyser
     processor DFT
     {
         input stream float<2> stereoWave;
+        input event int window_type;
         output event Spectrum spectrum;
         output event float[fftSize] frequencies;
+
+        event window_type(int type)
+        {
+            console <- type;
+        }
 
         let fftSize = DFT_BUFFER_SIZE / 2;
         let windowSize = DFT_BUFFER_SIZE;
