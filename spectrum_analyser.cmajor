@@ -1,7 +1,7 @@
 namespace spectrum_analyser
 {
     let DFT_BUFFER_SIZE = 2048;
-    let MEMORY_FRAMES = 5;
+    let MAX_MEMORY_FRAMES = 15;
 
     struct Spectrum
     {
@@ -14,6 +14,7 @@ namespace spectrum_analyser
     {
         input  stream float<2> audioIn;
         input dft.windowType;
+        input dft.peakMemory;
         output stream float<2> audioOut;
         output dft.spectrum;
         output dft.frequencies;
@@ -32,6 +33,7 @@ namespace spectrum_analyser
     {
         input stream float<2> stereoWave;
         input event int windowType [[ name: "Window Type", min: 0, max: 3, init: 1, text: "Rectangular|Hann|Bartlett|Hamming", automatable: true ]];
+        input value int peakMemory [[ name: "Peak Memory", min: 1, max: MAX_MEMORY_FRAMES, step: 1, init: 5, automatable: true]];
         output event Spectrum spectrum;
         output event float[fftSize] frequencies;
 
@@ -79,8 +81,8 @@ namespace spectrum_analyser
             }
             frequencies <- dftFrequencies;
 
-            wrap<MEMORY_FRAMES> memoryIdx = 0;
-            float[DFT_BUFFER_SIZE, MEMORY_FRAMES] magnitudeMemory;
+            wrap<MAX_MEMORY_FRAMES> memoryIdx = 0;
+            float[DFT_BUFFER_SIZE, MAX_MEMORY_FRAMES] magnitudeMemory;
             float[DFT_BUFFER_SIZE] waveBuffer;
             float[DFT_BUFFER_SIZE] complexSpectrum;
             Spectrum magSpectrum;
@@ -109,10 +111,12 @@ namespace spectrum_analyser
                 for (wrap<fftSize> binIdx)
                 {
                     float peak = 0.0f;
-                    for (wrap<MEMORY_FRAMES> memoryIdx)
+                    wrap<MAX_MEMORY_FRAMES> frameIdx = memoryIdx;
+                    for (int frameCount = 0; frameCount < peakMemory; ++frameCount)
                     {
-                        if (magnitudeMemory[binIdx, memoryIdx] > peak)
-                            peak = magnitudeMemory[binIdx, memoryIdx];
+                        --frameIdx;
+                        if (magnitudeMemory[binIdx, frameIdx] > peak)
+                            peak = magnitudeMemory[binIdx, frameIdx];
                     }
                     magSpectrum.peakMagnitudes[binIdx] = peak;
                 }
