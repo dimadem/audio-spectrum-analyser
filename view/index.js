@@ -140,7 +140,6 @@ class spectrum_analyser_View extends HTMLElement {
     
         // draw the spectrum
         const windowedMagnitudes = this.applyWindowFunction(value.magnitudes);
-        
         ctx.beginPath();
         ctx.strokeStyle = 'rgb(0, 255, 0)';
         for (let i = 0; i < windowedMagnitudes.length; i++) {
@@ -153,6 +152,18 @@ class spectrum_analyser_View extends HTMLElement {
         }
         ctx.stroke();
     
+        // Пики
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgb(255, 0, 0)';
+        for (let i = 0; i < value.peakMagnitudes.length; i++) {
+            const x = this.logScale(i, value.peakMagnitudes.length - 1, plotWidth);
+            const normalizedHeight = this.amplitudeToDb(value.peakMagnitudes[i]);
+            const y = plotHeight - (normalizedHeight * plotHeight);
+            
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
         // draw the peaks
         ctx.restore();
     }
