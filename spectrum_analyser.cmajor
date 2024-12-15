@@ -31,10 +31,10 @@ namespace spectrum_analyser
     {
         input stream float<2> stereoWave;
         output event Spectrum spectrum;
-        output value float[fftSize] frequencies;
+        output event float[fftSize] frequencies;
 
         let fftSize = DFT_BUFFER_SIZE / 2;
-        let windowSize = DFT_BUFFER_SIZE / 4;
+        let windowSize = DFT_BUFFER_SIZE;
         let fftsPerSecond = 20;
         let framesBetweenFtts = (processor.frequency / fftsPerSecond) - windowSize;
 
@@ -57,7 +57,7 @@ namespace spectrum_analyser
             float[fftSize] dftFrequencies;
             for (wrap<fftSize> binIdx)
             {
-                dftFrequencies[binIdx] = float(binIdx * processor.frequency / fftSize);
+                dftFrequencies[binIdx] = float(binIdx * processor.frequency / windowSize);
             }
             frequencies <- dftFrequencies;
 
