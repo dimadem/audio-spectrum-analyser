@@ -31,7 +31,7 @@ namespace spectrum_analyser
     {
         input stream float<2> stereoWave;
         output event Spectrum spectrum;
-        output value float[fftSize] frequencies;
+        output event float[fftSize] frequencies;
 
         let fftSize = DFT_BUFFER_SIZE / 2;
         let windowSize = DFT_BUFFER_SIZE / 4;
