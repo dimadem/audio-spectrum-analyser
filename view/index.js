@@ -11,14 +11,23 @@ class spectrum_analyser_View extends HTMLElement {
         {
             const dataDisplay = this.querySelector('#visualization');
             if (!dataDisplay) return;
-            this.updateVisualization(value.magnitudes);
+            this.updateVisualization(value);
+        };
+        // peakListener 
+        this.peakListener = (value) => {
+            const dataDisplay = this.querySelector('#visualization');
+            if (!dataDisplay) return;
+            this.updateVisualization(value);
         };
 
-        // take a look at spectrum and realign the visualization
+        // register the listener
+        this.patchConnection.addEndpointListener('spectrum', this.peakListener);
+
+        // register the listener
         this.patchConnection.addEndpointListener('spectrum', this.dftListener);
     }
 
-    updateVisualization(magnitudes) 
+    updateVisualization(value) 
     {
         const canvas = this.querySelector('#visualization');
         if (!canvas) return;
@@ -26,42 +35,51 @@ class spectrum_analyser_View extends HTMLElement {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
+        
+        const MIN_DB = -60;
+        const MAX_DB = 0;
 
-        // clean canvas before drawing
+        // clear the canvas
         ctx.clearRect(0, 0, width, height);
 
-        // draw the line
-        ctx.beginPath();
-        ctx.imageSmoothingEnabled = false;
-
-        //! calculate the pixel size
-        //1. magnitudes.length -> total number of frequencies
-        //2. size of each pixel related to screen width
-        const toLog = (value, min, max) => min * Math.pow(max/min, (value - min) / (max - min));
-        const smoothingFactor = 0.97;
-
-        if (!this.previousMagnitudes) {
-            this.previousMagnitudes = new Float32Array(magnitudes.length).fill(0);
+        // logScale is a function that maps an index to a log scale
+        function logScale(index, totalPoints) {
+            const minFreq = 20; // min freq Hz
+            const maxFreq = 20000; // max freq Hz
+            const minLog = Math.log10(minFreq);
+            const maxLog = Math.log10(maxFreq);
+            
+            // calculate the frequency at the index
+            const freq = Math.pow(10, minLog + (index / totalPoints) * (maxLog - minLog));
+            // map the frequency to a position on the canvas
+            return (Math.log10(freq) - minLog) / (maxLog - minLog) * width;
         }
 
-        const totalFrequencies = magnitudes.length;
-        const pixelSize = Math.max(1, Math.floor(width / totalFrequencies));
-        const logMagnitudes = new Float32Array(totalFrequencies);
+        // draw the spectrum
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgb(0, 255, 0)';
+        for (let i = 0; i < value.magnitudes.length; i++) {
+            const x = logScale(i, value.magnitudes.length - 1);
+            const dbValue = 20 * Math.log10(value.magnitudes[i]);
+            const normalizedHeight = Math.max(0, (dbValue - MIN_DB) / (MAX_DB - MIN_DB));
+            const y = height - (normalizedHeight * height);
+            
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
 
-        ctx.fillStyle = `rgba(0, 0, 0, 1.0)`;
-        for (let i = 1; i < totalFrequencies; i++) {
-            const logIndex = toLog(i, 1, totalFrequencies - 1);
-            const low = Math.floor(logIndex);
-            const high = Math.ceil(logIndex);
-            const weight = logIndex - low;
+        // draw the peaks
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgb(255, 0, 0)';
+        for (let i = 0; i < value.peakMagnitudes.length; i++) {
+            const x = logScale(i, value.peakMagnitudes.length - 1);
+            const dbValue = 20 * Math.log10(value.peakMagnitudes[i]);
+            const normalizedHeight = Math.max(0, (dbValue - MIN_DB) / (MAX_DB - MIN_DB));
+            const y = height - (normalizedHeight * height);
             
-            
-            const currentValue = magnitudes[low] + (magnitudes[high] - magnitudes[low]) * weight;
-            logMagnitudes[i] = currentValue * (1 - smoothingFactor) + this.previousMagnitudes[i] * smoothingFactor;
-            
-            const x = i * pixelSize;
-            const pixelHeight = Math.ceil(logMagnitudes[i] * height);
-            ctx.fillRect(x, height - pixelHeight, pixelSize, pixelHeight);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
         }
         ctx.stroke();
     }
