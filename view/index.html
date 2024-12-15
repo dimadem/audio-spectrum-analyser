@@ -48,12 +48,12 @@
             </canvas>
         </div>
         <div class="gui">
-        <label for="buffer_size">BUFFER_SIZE:</label>
-            <select id="buffer_size" name="buffer">
-            <option value="128">128</option>
-            <option value="256">256</option>
-            <option value="1024">1024</option>
-            <option value="2048">2048</option>
+            <label for="window_type">Window Type:</label>
+            <select id="window_type">
+                <option value="0">Rectangular</option>
+                <option value="1" selected="selected">Hann</option>
+                <option value="2">Bartlett</option>
+                <option value="3">Hamming</option>
             </select>
             <!-- <input type="range" id="vertical_slider" min="0" max="100" value="50" step="10"> -->
             <!-- <input type="range" id="horisontal_slider" min="0" max="100" value="50" step="10"> -->
