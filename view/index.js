@@ -41,7 +41,7 @@ class spectrum_analyser_View extends HTMLElement {
 
     connectedCallback() 
     {
-        const option = this.querySelector('#window_type');
+        const option = this.querySelector('#windowType');
 
         option.oninput = () => 
         {
