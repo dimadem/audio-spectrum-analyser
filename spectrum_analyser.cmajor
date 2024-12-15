@@ -15,7 +15,7 @@ namespace spectrum_analyser
         input  stream float<2> audioIn;
         output stream float<2> audioOut;
         output dft.spectrum;
-        output dft.frequencies;
+        // output dft.frequencies;
 
         node dft = DFT;
 
